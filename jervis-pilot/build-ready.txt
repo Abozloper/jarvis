@@ -1,1 +1,1 @@
-Build Jarvis master with a fixed offline English speech profile.
+Build and test the offline installer with speech downloads fully bypassed.
