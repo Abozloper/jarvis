@@ -14,7 +14,7 @@ def replace(file, old, new):
 replace("backend.js", "    delete env.JARVIS_ATTACH_PORT;", """
     if (this.app.isPackaged && process.platform === 'win32') {
       env.JARVIS_MASTER_DIR = path.join(process.resourcesPath, 'offline');
-      env.OLLAMA_MODEL = 'qwen3:0.6b';
+      env.OLLAMA_MODEL = 'qwen2.5:1.5b';
       env.JARVIS_STT_LANGUAGE = 'en';
       env.OLLAMA_LLM_LIBRARY = 'cpu';
       env.OLLAMA_NO_CLOUD = '1';
@@ -69,12 +69,12 @@ replace("app.py", "    last_turn_typed = typed\n    if isinstance(text, ImageCap
     if isinstance(text, ImageCaption):""".lstrip("\n"))
 package = root / "package.json"
 metadata = json.loads(package.read_text(encoding="utf-8"))
-metadata["version"] = "1.0.8"
+metadata["version"] = "1.0.9"
 metadata["build"]["extraResources"].append({"from": "offline", "to": "offline", "filter": ["**/*"]})
 package.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
 # Keep the bundled CPU model on one small context across warm-up and conversation.
 replace("local_llm.py", "    wanted = wanted or NUM_CTX", """
-    if os.getenv("JARVIS_MASTER_DIR") and model == "qwen3:0.6b":
+    if os.getenv("JARVIS_MASTER_DIR") and model == "qwen2.5:1.5b":
         return 4096
     wanted = wanted or NUM_CTX""".lstrip("\n"))
 replace("app.py", '        kwargs = {"model": GROQ_MODEL, "messages": trim_for_ai(with_verified_math(messages, user_text))}', '''
@@ -92,4 +92,20 @@ replace("app.py", '        kwargs = {"model": GROQ_MODEL, "messages": trim_for_a
                        and not m.get("tool_calls")][-6:]
             kwargs["messages"] = [{"role": "system", "content": system}, *history]
             kwargs["max_tokens"] = (256 if re.search(r"\\b(detail(?:ed|s)?|step.by.step|long|full)\\b",
-                                                    user_text, re.I) else 96)'''.lstrip("\n"))
+                                                    user_text, re.I) else (96 if last_turn_typed else 48))'''.lstrip("\n"))
+
+replace("app.py", "recognizer.pause_threshold = 1.0",
+        'recognizer.pause_threshold = 0.75 if os.getenv("JARVIS_MASTER_DIR") else 1.0')
+replace("app.py", "    context = language_context()\n    if pending:", '''
+    if (os.getenv("JARVIS_MASTER_DIR") and LLM_BACKEND == "ollama"
+            and not pending and not follow_up and not nlu.has_hebrew(text)
+            and re.match(r"^(?:what (?:is|are|was|were)|why (?:is|are|do|does|did)|who (?:is|was)|explain)\\b", text, re.I)
+            and not should_enable_tools(text)):
+        return None
+    context = language_context()
+    if pending:'''.lstrip("\n"))
+replace("local_llm.py", '    def __enter__(self) -> dict:\n        if (os.getenv("JARVIS_GPU_FIT")', '''
+    def __enter__(self) -> dict:
+        if os.getenv("JARVIS_MASTER_DIR") and self.model == "qwen2.5:1.5b":
+            return {"num_gpu": 0}
+        if (os.getenv("JARVIS_GPU_FIT")'''.lstrip("\n"))
