@@ -25,3 +25,18 @@ with TemporaryDirectory() as folder:
     assert "shorten" in command("draft lead follow-ups")
     assert (root / "lead-drafts.txt").read_text(encoding="utf-8") == "Northstar draft\n"
 print("Pilot tests passed")
+
+from jarvis_pilot import relevant_notes
+
+with TemporaryDirectory() as folder:
+    root = Path(folder)
+    assert relevant_notes("What time does Gems open Saturday?", root) == []
+    handle("Learn that Gems opens at 9 a.m. on Saturdays.", root, fake_chat, "http://localhost")
+    handle("Remember that the spare charger is in the blue drawer.", root, fake_chat, "http://localhost")
+    assert relevant_notes("What time does Gems open Saturday?", root) == [
+        "Gems opens at 9 a.m. on Saturdays."
+    ]
+    assert relevant_notes("Where is the spare charger?", root) == [
+        "the spare charger is in the blue drawer."
+    ]
+    assert relevant_notes("Why is the sky blue?", root) == []
