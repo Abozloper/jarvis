@@ -18,6 +18,7 @@ replace("backend.js", "    delete env.JARVIS_ATTACH_PORT;", """
       env.JARVIS_STT_LANGUAGE = 'en';
       env.OLLAMA_LLM_LIBRARY = 'cpu';
       env.OLLAMA_NO_CLOUD = '1';
+      env.LLM_BACKEND = 'ollama';
     }
     delete env.JARVIS_ATTACH_PORT;""".lstrip("\n"))
 replace("local_ai.py", '        configured = os.getenv("OLLAMA_URL", "").rstrip("/")', '''
@@ -68,6 +69,27 @@ replace("app.py", "    last_turn_typed = typed\n    if isinstance(text, ImageCap
     if isinstance(text, ImageCaption):""".lstrip("\n"))
 package = root / "package.json"
 metadata = json.loads(package.read_text(encoding="utf-8"))
-metadata["version"] = "1.0.6"
+metadata["version"] = "1.0.7"
 metadata["build"]["extraResources"].append({"from": "offline", "to": "offline", "filter": ["**/*"]})
 package.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+# Keep the bundled CPU model on one small context across warm-up and conversation.
+replace("local_llm.py", "    wanted = wanted or NUM_CTX", """
+    if os.getenv("JARVIS_MASTER_DIR") and model == "qwen2.5:1.5b":
+        return 4096
+    wanted = wanted or NUM_CTX""".lstrip("\n"))
+replace("app.py", '        kwargs = {"model": GROQ_MODEL, "messages": trim_for_ai(with_verified_math(messages, user_text))}', '''
+        prompt = trim_for_ai(with_verified_math(messages, user_text))
+        kwargs = {"model": GROQ_MODEL, "messages": prompt}
+        if os.getenv("JARVIS_MASTER_DIR") and LLM_BACKEND == "ollama" and not tools:
+            system = ("You are Jarvis, a local desktop assistant. Answer directly. "
+                      "Be concise unless asked for detail. Never claim you performed a computer action. "
+                      "Use the supplied date and verified facts when relevant.")
+            if prompt and prompt[0].get("role") == "system":
+                _, marker, clock = prompt[0]["content"].rpartition("- Right now it is ")
+                if marker:
+                    system += "\\n" + marker + clock
+            history = [m for m in prompt[1:] if m.get("role") in {"user", "assistant", "system"}
+                       and not m.get("tool_calls")][-6:]
+            kwargs["messages"] = [{"role": "system", "content": system}, *history]
+            kwargs["max_tokens"] = (256 if re.search(r"\\b(detail(?:ed|s)?|step.by.step|long|full)\\b",
+                                                    user_text, re.I) else 96)'''.lstrip("\n"))
