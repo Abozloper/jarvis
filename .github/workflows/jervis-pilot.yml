@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths: ['jervis-pilot/build-ready.txt']
   workflow_dispatch:
+concurrency:
+  group: jarvis-windows-pilot
+  cancel-in-progress: true
 permissions:
   contents: write
 jobs:
@@ -39,6 +42,15 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $true
           python -m pip install -r requirements.txt -r requirements-dev.txt pyinstaller
           python -m pytest -q
+      - name: Package and smoke-test installer
+        working-directory: upstream
+        shell: pwsh
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          JERVIS_AUDIO: 'off'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
           pyinstaller --noconfirm --distpath backend-dist --workpath build/pyinstaller jervis-backend.spec
           npm ci
           npx electron-builder --win --publish never
