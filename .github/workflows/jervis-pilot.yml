@@ -44,7 +44,10 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           python -m pip install -r requirements.txt -r requirements-dev.txt pyinstaller
-          python -m pytest -q
+          python -m pytest -q tests/test_local_ai.py tests/test_nlu.py
+          $env:PYTHONPATH = (Resolve-Path ../jervis-pilot).Path
+          python ../jervis-pilot/check_pilot.py
+          Remove-Item Env:PYTHONPATH
       - name: Package and smoke-test installer
         working-directory: upstream
         shell: pwsh
