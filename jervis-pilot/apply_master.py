@@ -14,7 +14,7 @@ def replace(file, old, new):
 replace("backend.js", "    delete env.JARVIS_ATTACH_PORT;", """
     if (this.app.isPackaged && process.platform === 'win32') {
       env.JARVIS_MASTER_DIR = path.join(process.resourcesPath, 'offline');
-      env.OLLAMA_MODEL = 'qwen2.5:1.5b';
+      env.OLLAMA_MODEL = 'qwen3:0.6b';
       env.JARVIS_STT_LANGUAGE = 'en';
       env.OLLAMA_LLM_LIBRARY = 'cpu';
       env.OLLAMA_NO_CLOUD = '1';
@@ -69,12 +69,12 @@ replace("app.py", "    last_turn_typed = typed\n    if isinstance(text, ImageCap
     if isinstance(text, ImageCaption):""".lstrip("\n"))
 package = root / "package.json"
 metadata = json.loads(package.read_text(encoding="utf-8"))
-metadata["version"] = "1.0.7"
+metadata["version"] = "1.0.8"
 metadata["build"]["extraResources"].append({"from": "offline", "to": "offline", "filter": ["**/*"]})
 package.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
 # Keep the bundled CPU model on one small context across warm-up and conversation.
 replace("local_llm.py", "    wanted = wanted or NUM_CTX", """
-    if os.getenv("JARVIS_MASTER_DIR") and model == "qwen2.5:1.5b":
+    if os.getenv("JARVIS_MASTER_DIR") and model == "qwen3:0.6b":
         return 4096
     wanted = wanted or NUM_CTX""".lstrip("\n"))
 replace("app.py", '        kwargs = {"model": GROQ_MODEL, "messages": trim_for_ai(with_verified_math(messages, user_text))}', '''
