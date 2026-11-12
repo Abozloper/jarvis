@@ -1,1 +1,1 @@
-Build Jarvis master v2 with faster offline chat on CPU.
+Build Windows Jarvis with Qwen3 0.6B, no thinking, and offline speech.
