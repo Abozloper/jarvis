@@ -10,7 +10,7 @@ from urllib.parse import urlsplit
 
 def handle(text, root, chat, local_url):
     text = text.strip().replace("’", "'")
-    note = re.fullmatch(r"(?:remember(?: that)?|save a note(?: that)?)\s+(.+)", text, re.I)
+    note = re.fullmatch(r"(?:remember(?: that)?|learn that|save a note(?: that)?)\s+(.+)", text, re.I)
     command = text.rstrip(" .?!").casefold()
     briefs = {"what's on my plate today", "what is on my plate today", "give me my daily brief",
               "daily brief", "read my notes"}
@@ -68,3 +68,34 @@ def handle(text, root, chat, local_url):
     with (root / "lead-drafts.txt").open("w", encoding="utf-8") as file:
         file.write(draft + "\n")
     return "I saved the suggested follow-ups to lead drafts in your Jervis Pilot folder. Review them before sending."
+
+_NOTE_STOP_WORDS = frozenset(
+    "a an the is are was were be am do does did of for to in on at by it its i me my "
+    "we our you your and or what when where who how why tell can could please".split()
+)
+
+
+def _note_words(text):
+    words = re.findall(r"[^\W_]+", text.casefold())
+    return {word.removesuffix("s") if len(word) > 3 else word
+            for word in words if len(word) > 1 and word not in _NOTE_STOP_WORDS}
+
+
+def relevant_notes(text, root):
+    """Return up to three recent notes with meaningful word overlap."""
+    query = _note_words(text)
+    path = Path(root) / "notes.db"
+    if not query or not path.is_file():
+        return []
+    try:
+        with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=0.1)) as db:
+            rows = db.execute("SELECT body FROM notes ORDER BY id DESC LIMIT 200").fetchall()
+    except sqlite3.Error:
+        return []
+    matches = []
+    for (body,) in rows:
+        overlap = len(query & _note_words(body))
+        if overlap >= min(2, len(query)):
+            matches.append((overlap, body))
+    matches.sort(key=lambda match: match[0], reverse=True)
+    return [body for _, body in matches[:3]]
