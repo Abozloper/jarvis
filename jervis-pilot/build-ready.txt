@@ -1,1 +1,1 @@
-Build the v1.0.5 Windows pilot with notes, daily brief, and lead follow-ups.
+Build Jarvis Windows Pilot v2 with screen branding, text-only recovery, and engine diagnostics.
