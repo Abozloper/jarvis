@@ -34,16 +34,16 @@ update("main.js", [("title: 'Jervis'", "title: 'Jarvis'")])
 update("renderer.js", [("Jervis", "Jarvis")])
 update("app.py", [
     ('            if mic_muted.is_set():\n                send_status("muted")',
-     '            if AUDIO_OFF or mic_muted.is_set():\n                send_status("muted")'),
+     '            if os.getenv(\'JERVIS_RECOVERY_AUDIO\') == \'1\' or mic_muted.is_set():\n                send_status("muted")'),
     ('        _devices["microphones"] = list_microphones()\n        _devices["voices"] = osal.list_voices()',
-     '        _devices["microphones"] = [] if AUDIO_OFF else list_microphones()\n        _devices["voices"] = [] if AUDIO_OFF else osal.list_voices()'),
+     '        _devices["microphones"] = [] if os.getenv('JERVIS_RECOVERY_AUDIO') == '1' else list_microphones()\n        _devices["voices"] = [] if os.getenv('JERVIS_RECOVERY_AUDIO') == '1' else osal.list_voices()'),
 ])
 update("backend.js", [
     ("    this.crashes = [];\n    this.stopping = false;",
      "    this.crashes = [];\n    this.textOnly = process.argv.includes('--text-only');\n    this.stopping = false;"),
     ("      PYTHONUNBUFFERED: '1',", "      PYTHONFAULTHANDLER: '1',\n      PYTHONUNBUFFERED: '1',"),
     ("    delete env.JERVIS_ATTACH_PORT;",
-     "    if (this.textOnly) env.JERVIS_AUDIO = 'off';\n    delete env.JERVIS_ATTACH_PORT;"),
+     "    if (this.textOnly) { env.JERVIS_AUDIO = 'off'; env.JERVIS_RECOVERY_AUDIO = '1'; }\n    delete env.JERVIS_ATTACH_PORT;"),
     ("    forward(child.stderr);",
      "    if (!this.app.isPackaged) forward(child.stderr);\n"
      "    else child.stderr.on('data', (chunk) => this.log('Engine stderr: ' + chunk.toString('utf8').slice(0, 4000).trim()));"),
