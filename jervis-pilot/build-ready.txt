@@ -1,1 +1,1 @@
-Build licensed Jarvis master with offline speech and Ollama.
+Run Windows and local AI checks and build the offline master installer.
