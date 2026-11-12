@@ -21,13 +21,15 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '22'
-      - name: Prepare Jervis v1.0.5
+      - name: Prepare pinned MIT-licensed Jarvis
         shell: pwsh
         run: |
-          git clone --depth 1 --branch v1.0.5 https://github.com/TheJarvis-App/jarvis-app.git upstream
+          git init upstream
+          git -C upstream fetch --depth 1 https://github.com/TheJarvis-App/jarvis-app.git 7d06964126c02422351fe014b4b736cf4e365a78
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          git -C upstream checkout --detach FETCH_HEAD
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Copy-Item jervis-pilot/jarvis_pilot.py upstream/
-          python jervis-pilot/apply_patch.py upstream
           python jervis-pilot/apply_master.py upstream
           node --check upstream/backend.js
           node --check upstream/renderer.js
@@ -37,7 +39,7 @@ jobs:
         shell: pwsh
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-          JERVIS_AUDIO: 'off'
+          JARVIS_AUDIO: 'off'
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
@@ -48,35 +50,38 @@ jobs:
         shell: pwsh
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-          JERVIS_AUDIO: 'off'
+          JARVIS_AUDIO: 'off'
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
           python ../jervis-pilot/stage_master.py offline
           Copy-Item LICENSE offline/Jervis-LICENSE.txt
-          pyinstaller --noconfirm --distpath backend-dist --workpath build/pyinstaller jervis-backend.spec
+          pyinstaller --noconfirm --distpath backend-dist --workpath build/pyinstaller jarvis-backend.spec
           $env:JARVIS_MASTER_DIR = (Resolve-Path offline).Path
-          $env:JERVIS_DATA_DIR = Join-Path $env:RUNNER_TEMP 'Jarvis speech test'
+          $env:JARVIS_DATA_DIR = Join-Path $env:RUNNER_TEMP 'Jarvis speech test'
           $env:HF_HUB_OFFLINE = '1'
           $env:JARVIS_TEST_SPEECH_WAV = Join-Path $env:RUNNER_TEMP 'jarvis-speech.wav'
-          powershell.exe -NoProfile -NonInteractive -Command '
+          @'
+          param()
+          $ErrorActionPreference = 'Stop'
             Add-Type -AssemblyName System.Speech
             $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer
             $format = New-Object System.Speech.AudioFormat.SpeechAudioFormatInfo(16000, [System.Speech.AudioFormat.AudioBitsPerSample]::Sixteen, [System.Speech.AudioFormat.AudioChannel]::Mono)
             $synth.SetOutputToWaveFile($env:JARVIS_TEST_SPEECH_WAV, $format)
             $synth.Speak("The blue sky is clear today.")
             $synth.Dispose()
-          '
-          & ./backend-dist/jervis-backend/jervis-backend.exe --selftest --speech
-          Remove-Item Env:JARVIS_MASTER_DIR,Env:JERVIS_DATA_DIR,Env:HF_HUB_OFFLINE,Env:JARVIS_TEST_SPEECH_WAV
+          '@ | Set-Content -Encoding UTF8 (Join-Path $env:RUNNER_TEMP 'jarvis-speech.ps1')
+          powershell.exe -NoProfile -NonInteractive -File (Join-Path $env:RUNNER_TEMP 'jarvis-speech.ps1')
+          & ./backend-dist/jarvis-backend/jarvis-backend.exe --selftest --speech
+          Remove-Item Env:JARVIS_MASTER_DIR,Env:JARVIS_DATA_DIR,Env:HF_HUB_OFFLINE,Env:JARVIS_TEST_SPEECH_WAV
           npm ci
           npx electron-builder --win --publish never
-          if ((Get-Item 'release/Jervis Setup.exe').Length -ge 2GB) { throw 'Master installer exceeds the release asset limit.' }
-          ./tests/installer/windows_smoke.ps1 -Installer 'release/Jervis Setup.exe'
+          if ((Get-Item 'release/Jarvis Setup.exe').Length -ge 2GB) { throw 'Master installer exceeds the release asset limit.' }
+          ./tests/installer/windows_smoke.ps1 -Installer 'release/Jarvis Setup.exe'
       - uses: actions/upload-artifact@v4
         with:
           name: Jarvis-Windows-Master
-          path: upstream/release/Jervis Setup.exe
+          path: upstream/release/Jarvis Setup.exe
           if-no-files-found: error
       - name: Publish Jarvis Windows update
         shell: bash
@@ -85,6 +90,6 @@ jobs:
         run: |
           set -euo pipefail
           cd upstream/release
-          mv 'Jervis Setup.exe' Jarvis-Windows-Master-Setup.exe
+          mv 'Jarvis Setup.exe' Jarvis-Windows-Master-Setup.exe
           sha256sum Jarvis-Windows-Master-Setup.exe > SHA256SUMS.txt
           gh release create jarvis-windows-master-v1 Jarvis-Windows-Master-Setup.exe SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Jarvis Windows Master Installer" --prerelease --notes "Single Windows x64 installer with bundled CPU Ollama, Qwen2.5 1.5B, and English Whisper speech recognition. No runtime or model downloads are needed. Close Jarvis from the system tray before upgrading. The installer is unsigned. Voice uses an available Windows system voice. This edition focuses on voice, notes and local text workflows."
