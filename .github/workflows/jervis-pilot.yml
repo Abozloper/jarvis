@@ -5,7 +5,7 @@ on:
     paths: ['jervis-pilot/build-ready.txt']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   windows:
     runs-on: windows-latest
@@ -25,6 +25,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Copy-Item jervis-pilot/jarvis_pilot.py upstream/
           python jervis-pilot/apply_patch.py upstream
+          node --check upstream/backend.js
+          node --check upstream/renderer.js
+          python -m py_compile upstream/app.py
       - name: Build Windows installer
         working-directory: upstream
         shell: pwsh
@@ -45,3 +48,13 @@ jobs:
           name: Jervis-Windows-Pilot
           path: upstream/release/Jervis Setup.exe
           if-no-files-found: error
+      - name: Publish Jarvis Windows update
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd upstream/release
+          mv 'Jervis Setup.exe' Jarvis-Windows-Setup.exe
+          sha256sum Jarvis-Windows-Setup.exe > SHA256SUMS.txt
+          gh release create jarvis-windows-pilot-v2 Jarvis-Windows-Setup.exe SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Jarvis Windows Pilot v2" --prerelease --notes "The screen now says Jarvis. On repeated Windows engine exits the app retries with audio off, so you can type if audio startup was the issue. If the engine still stops, open Settings > Diagnostics and share the last lines of window.log. The installer is unsigned. Close the existing app from the tray before upgrading."
