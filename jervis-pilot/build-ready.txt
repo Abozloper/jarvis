@@ -1,1 +1,1 @@
-Build Jarvis Windows Pilot v2 with isolated audio recovery and diagnostics.
+Rebuild the checked Jarvis v2 recovery patch.
