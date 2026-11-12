@@ -1,1 +1,1 @@
-Build Jarvis Windows Pilot v2 with screen branding, text-only recovery, and engine diagnostics.
+Build Jarvis Windows Pilot v2 with isolated audio recovery and diagnostics.
