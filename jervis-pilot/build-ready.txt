@@ -1,1 +1,1 @@
-Rebuild the checked Jarvis v2 recovery patch.
+Build the offline Windows x64 master installer and verify its bundled speech and local model.
