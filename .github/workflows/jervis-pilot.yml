@@ -63,6 +63,7 @@ jobs:
           $env:JARVIS_MASTER_DIR = (Resolve-Path offline).Path
           $env:JARVIS_DATA_DIR = Join-Path $env:RUNNER_TEMP 'Jarvis speech test'
           $env:HF_HUB_OFFLINE = '1'
+          $env:JARVIS_STT_LANGUAGE = 'en'
           $env:JARVIS_TEST_SPEECH_WAV = Join-Path $env:RUNNER_TEMP 'jarvis-speech.wav'
           @'
           param()
