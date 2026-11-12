@@ -15,7 +15,7 @@ from huggingface_hub import snapshot_download
 VERSION = "v0.34.4"
 ENGINE = "ollama-windows-amd64.zip"
 SHA256 = "535193f38f3344e5b08f5d1c171c31ce11aa17f0124ff69ae26d8ec7fe06fa62"
-MODEL = "qwen2.5:1.5b"
+MODEL = "qwen3:0.6b"
 URL = "http://127.0.0.1:11535"
 
 
@@ -71,11 +71,14 @@ def stage(root):
                 raise RuntimeError("Missing text-model license")
             (root / "Qwen-LICENSE.txt").write_text(model_license, encoding="utf-8")
             answer = requests.post(URL + "/api/chat", json={
-                "model": MODEL, "stream": False, "options": {"num_gpu": 0, "num_predict": 32},
+                "model": MODEL, "stream": False, "think": False, "options": {"num_gpu": 0, "num_ctx": 4096, "num_predict": 32},
                 "messages": [{"role": "user", "content": "What color is the sky on a clear day? Answer in one sentence."}],
             }, timeout=180)
             answer.raise_for_status()
-            if "blue" not in answer.json()["message"]["content"].casefold():
+            message = answer.json()["message"]
+            if message.get("thinking"):
+                raise RuntimeError("The bundled model emitted thinking despite think=False")
+            if "blue" not in message["content"].casefold():
                 raise RuntimeError("CPU model failed the inference check")
         finally:
             server.terminate()
