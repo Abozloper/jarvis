@@ -1,0 +1,47 @@
+name: Jervis Windows pilot
+on:
+  push:
+    branches: [main]
+    paths: ['jervis-pilot/build-ready.txt']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Prepare Jervis v1.0.5
+        shell: pwsh
+        run: |
+          git clone --depth 1 --branch v1.0.5 https://github.com/TheJarvis-App/jarvis-app.git upstream
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Copy-Item jervis-pilot/jarvis_pilot.py upstream/
+          python jervis-pilot/apply_patch.py upstream
+      - name: Build Windows installer
+        working-directory: upstream
+        shell: pwsh
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          JERVIS_AUDIO: 'off'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          python -m pip install -r requirements.txt -r requirements-dev.txt pyinstaller
+          python -m pytest -q
+          pyinstaller --noconfirm --distpath backend-dist --workpath build/pyinstaller jervis-backend.spec
+          npm ci
+          npx electron-builder --win --publish never
+          ./tests/installer/windows_smoke.ps1 -Installer 'release/Jervis Setup.exe'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Jervis-Windows-Pilot
+          path: upstream/release/Jervis Setup.exe
+          if-no-files-found: error
