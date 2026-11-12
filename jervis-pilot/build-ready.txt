@@ -1,1 +1,1 @@
-Build the offline Windows x64 master installer and verify its bundled speech and local model.
+Build licensed Jarvis master with offline speech and Ollama.
