@@ -1,1 +1,1 @@
-Build and test the offline installer with speech downloads fully bypassed.
+Build Jarvis master v2 with faster offline chat on CPU.
