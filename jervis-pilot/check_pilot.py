@@ -40,3 +40,28 @@ with TemporaryDirectory() as folder:
         "the spare charger is in the blue drawer."
     ]
     assert relevant_notes("Why is the sky blue?", root) == []
+
+from datetime import date
+import jarvis_research
+
+class CalendarResponse:
+    status_code = 200
+    def __enter__(self):
+        return self
+    def __exit__(self, *args):
+        return False
+    def iter_content(self, *args, **kwargs):
+        yield (b"<h4>What's Coming to Netflix on December 1st</h4><ul>"
+               b"<li><strong>Example Film</strong> (2026) Original</li>"
+               b"<li>A Series (Season 1)</li><li>Game (2026) Live event!</li></ul>")
+
+def get_calendar(url, **kwargs):
+    assert url.endswith("whats-coming-to-netflix-in-december-2026/")
+    return CalendarResponse()
+
+result = jarvis_research.answer("I want the top next 10 movies coming out in Netflix next month",
+                                date(2026, 11, 12), get_calendar)
+assert "1. Example Film" in result and "A Series" not in result and "Game" not in result
+assert "release order" in result and "Source:" in result
+assert jarvis_research.answer("Open Netflix") is None
+assert "US catalog only" in jarvis_research.answer("Movies coming to Netflix next month in Colombia")
