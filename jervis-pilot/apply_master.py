@@ -35,7 +35,7 @@ replace("local_ai.py", "        self.use_vision = wants_vision()", '        self
 replace("local_ai.py", "        self._check_disk(int(APPROX_MODEL_BYTES.get(self.text_model", '''
         if os.getenv("JARVIS_MASTER_DIR"):
             raise SetupError("The bundled text model is missing.", "Reinstall Jarvis from the master installer.")
-        self._check_disk(int(sum(APPROX_MODEL_BYTES'''.lstrip("\n"))
+        self._check_disk(int(APPROX_MODEL_BYTES.get(self.text_model'''.lstrip("\n"))
 replace("stt_local.py", '    return os.path.join(paths.models_dir(), "whisper", name)', '''
     bundled = os.getenv("JARVIS_MASTER_DIR")
     if bundled and name == "base.en":
