@@ -1,0 +1,1 @@
+Download Jarvis-Business-Setup.exe and run it on Windows x64. The pilot installer is unsigned. Use Model setup in the app to install Ollama and download qwen3:4b-q4_K_M. Select Lead follow-up drafts and Run locally to try the sample.
