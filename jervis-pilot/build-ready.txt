@@ -1,1 +1,1 @@
-Build Windows Jarvis with Qwen3 0.6B, no thinking, and offline speech.
+Build the v2-based voice latency update with Qwen2.5 1.5B.
