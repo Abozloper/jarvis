@@ -36,7 +36,7 @@ update("app.py", [
     ('            if mic_muted.is_set():\n                send_status("muted")',
      '            if os.getenv(\'JERVIS_RECOVERY_AUDIO\') == \'1\' or mic_muted.is_set():\n                send_status("muted")'),
     ('        _devices["microphones"] = list_microphones()\n        _devices["voices"] = osal.list_voices()',
-     '        _devices["microphones"] = [] if os.getenv('JERVIS_RECOVERY_AUDIO') == '1' else list_microphones()\n        _devices["voices"] = [] if os.getenv('JERVIS_RECOVERY_AUDIO') == '1' else osal.list_voices()'),
+     '        _devices["microphones"] = [] if os.getenv("JERVIS_RECOVERY_AUDIO") == "1" else list_microphones()\n        _devices["voices"] = [] if os.getenv("JERVIS_RECOVERY_AUDIO") == "1" else osal.list_voices()'),
 ])
 update("backend.js", [
     ("    this.crashes = [];\n    this.stopping = false;",
