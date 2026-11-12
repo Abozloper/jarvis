@@ -36,15 +36,17 @@ replace("local_ai.py", "        self._check_disk(int(APPROX_MODEL_BYTES.get(self
         if os.getenv("JARVIS_MASTER_DIR"):
             raise SetupError("The bundled text model is missing.", "Reinstall Jarvis from the master installer.")
         self._check_disk(int(APPROX_MODEL_BYTES.get(self.text_model'''.lstrip("\n"))
-replace("stt_local.py", "    if not BILINGUAL:\\n        return (\"base.en\",)", '    if os.getenv("JARVIS_MASTER_DIR") or not BILINGUAL:\\n        return ("base.en",)')
+replace("stt_local.py", 'BILINGUAL = LANGUAGE != "en"', 'BILINGUAL = not os.getenv("JARVIS_MASTER_DIR") and LANGUAGE != "en"')
 replace("stt_local.py", '    return os.path.join(paths.models_dir(), "whisper", name)', '''
     bundled = os.getenv("JARVIS_MASTER_DIR")
     if bundled and name == "base.en":
         return os.path.join(bundled, "speech")
     return os.path.join(paths.models_dir(), "whisper", name)'''.lstrip("\n"))
 replace("stt_local.py", "    from huggingface_hub import snapshot_download", '''
-    if os.getenv("JARVIS_MASTER_DIR") and not model_ready():
-        raise RuntimeError("The bundled speech model is missing. Reinstall Jarvis.")
+    if os.getenv("JARVIS_MASTER_DIR"):
+        if not has("base.en"):
+            raise RuntimeError("The bundled speech model is missing. Reinstall Jarvis.")
+        return _model_dir("base.en")
     from huggingface_hub import snapshot_download'''.lstrip("\n"))
 replace("selftest.py", "            heard = stt_local.transcribe_full(clip.getvalue())", '''
             fixture = os.getenv("JARVIS_TEST_SPEECH_WAV")
