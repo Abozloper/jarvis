@@ -1,1 +1,1 @@
-Build the v2-based voice latency update with Qwen2.5 1.5B.
+Build v5 with local note lookup and the one-second speech pause.
