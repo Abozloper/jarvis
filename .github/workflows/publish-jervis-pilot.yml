@@ -1,0 +1,35 @@
+name: Publish Jervis Windows pilot
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publish-jervis-pilot.yml']
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Jervis-Windows-Pilot
+          run-id: '43275523202'
+          github-token: ${{ github.token }}
+          path: release
+      - name: Publish installer and checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd release
+          mv 'Jervis Setup.exe' Jervis-Windows-Setup.exe
+          sha256sum Jervis-Windows-Setup.exe > SHA256SUMS.txt
+          cat > notes.md <<'EOF'
+          Download **Jervis-Windows-Setup.exe** under Assets and run it on Windows x64. The installer is unsigned. Keep internet connected for the initial local model downloads. No terminal or GitHub account is needed.
+
+          Once Jervis is listening, try “Remember that I promised to call Dan Friday,” then “Give me my daily brief.” Say “Draft lead follow-ups” to try the included sample inbox. See the [pilot instructions](https://github.com/Abozloper/jarvis/tree/main/jervis-pilot) for using exported emails. Drafts are saved for review.
+
+          Built from Jervis v1.0.5. The Windows fresh-install smoke test passed on GitHub Actions.
+          EOF
+          gh release create jervis-windows-pilot-v1 Jervis-Windows-Setup.exe SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target 7546f85d9d119505d3ff343277993b05931bdcf7 --title "Jervis Windows Pilot" --notes-file notes.md --prerelease
