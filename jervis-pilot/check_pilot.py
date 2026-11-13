@@ -92,3 +92,27 @@ with TemporaryDirectory() as folder:
         return WebResponse()
     result = jarvis_sources.answer("Search the web for example topic", root, fake_chat, get_web)
     assert "Verified example excerpt" in result and "https://example.org" in result
+
+import json
+from jarvis_operations import Operations
+with TemporaryDirectory() as folder:
+    root = Path(folder)
+    (root / "Data").mkdir()
+    (root / "Data" / "jobs.json").write_text(json.dumps([
+        {"id":"J-17","title":"Install","status":"delayed","due":"2026-11-12",
+         "blocker":"Missing part","evidence":"Vendor confirmed a backorder","owner":"Sam"},
+        {"id":"J-18","title":"Delivery","status":"open","due":"2026-11-12"},
+        {"id":"J-19","title":"Repair","status":"open","due":"2026-11-12"},
+        {"id":"J-20","title":"Quote","status":"open","due":"2026-11-12"},
+    ]), encoding="utf-8")
+    ops = Operations()
+    brief = ops.answer("Jarvis, brief me on today’s operations and show the three items that need my attention.", root, date(2026,11,12))
+    assert brief.count("[Data/jobs.json") == 3 and "J-17" in brief
+    assert "Vendor confirmed a backorder" in ops.answer("Open the delayed job. What is holding it up?", root)
+    preview = ops.answer("Draft the customer update and an internal follow-up task.", root)
+    assert "CUSTOMER UPDATE" in preview and "INTERNAL FOLLOW-UP" in preview
+    assert not (root / "Approved").exists()
+    assert "no pending drafts" in ops.answer("Approve drafts for job J-18", root)
+    assert not (root / "Approved").exists()
+    assert "Saved both" in ops.answer("Approve drafts for job J-17", root)
+    assert "Vendor confirmed a backorder" in (root / "Approved" / "J-17-drafts.txt").read_text(encoding="utf-8")
