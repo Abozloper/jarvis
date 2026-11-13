@@ -124,6 +124,11 @@ def answer(text, root, chat, get=requests.get):
         return local_search(match[1], folder)
     if re.fullmatch(r"(?:summarize|give me a summary of) (?:my |the )?(?:sales )?pipeline", text, re.I):
         return pipeline_summary(folder)
+    text = re.sub(r"^(?:hey )?(?:jarvis|jervis)[, ]+", "", text, flags=re.I)
+    if (re.search(r"\b(?:latest|current|today|tomorrow|this week|next month|upcoming)\b", text, re.I)
+            and re.match(r"^(?:what|when|where|who|how|which|find|show|tell|give|is|are)\b", text, re.I)
+            and not re.search(r"\b(?:my|our|local|job|jobs|notes|files|spotify)\b", text, re.I)):
+        return public_web(text, chat, get)
     match = WEB.fullmatch(text)
     if match and not re.search(r"\b(?:spotify|youtube|local files|local data|my notes|my files|my data)\b", match[1], re.I):
         return public_web(match[1], chat, get)
