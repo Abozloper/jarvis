@@ -2,12 +2,16 @@
 import csv
 import json
 import re
+import time
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 import requests
 import jarvis_memory
+
+_recent = {}
+STOP_WORDS = set("a an the is are was were what where when why how can could would should my our your me please find search about for of to in on and or it that this".split())
 
 WEB = re.compile(r"^(?:please )?(?:search (?:the web|the internet|online|google)(?: for)?|research|look up) (.+)$", re.I)
 LOCAL = re.compile(r"^(?:search|look up|find in) (?:my )?(?:local (?:files|data|datasets)|datasets)(?: for)? (.+)$", re.I)
@@ -77,7 +81,9 @@ def public_web(query, chat, get):
 
 def local_search(query, folder):
     folder.mkdir(parents=True, exist_ok=True)
-    words = set(re.findall(r"\w{2,}", query.casefold()))
+    words = set(re.findall(r"\w{2,}", query.casefold())) - STOP_WORDS
+    if not words:
+        return "What topic or record should I look for in your local files?"
     matches = []
     for path in sorted(folder.iterdir())[:100]:
         if path.is_symlink() or path.suffix.lower() not in {".txt", ".md", ".csv", ".json"} or not path.is_file():
@@ -89,6 +95,8 @@ def local_search(query, folder):
             continue
         for line, value in enumerate(sample.splitlines(), 1):
             score = len(words & set(re.findall(r"\w{2,}", value.casefold())))
+            if query.casefold() in value.casefold():
+                score += 3
             if score:
                 matches.append((score, f"{path.name}:{line} — {value.strip()[:320]}"))
     matches.sort(key=lambda item: item[0], reverse=True)
@@ -119,7 +127,7 @@ def pipeline_summary(folder):
     return f"Pipeline summary from pipeline.csv: {total} records." + (f" {details}." if details else "")
 
 
-def answer(text, root, chat, get=requests.get):
+def _answer(text, root, chat, get=requests.get):
     text = text.strip().rstrip("?.!")
     folder = Path(root) / "Data"
     match = LOCAL.fullmatch(text)
@@ -136,3 +144,24 @@ def answer(text, root, chat, get=requests.get):
     if match and not re.search(r"\b(?:spotify|youtube|local files|local data|my notes|my files|my data)\b", match[1], re.I):
         return public_web(match[1], chat, get)
     return None
+
+def answer(text, root, chat, get=requests.get):
+    text = re.sub(r"^(?:hey )?(?:jarvis|jervis)[, ]+", "", text.strip(), flags=re.I)
+    key = str(Path(root).resolve())
+    previous = _recent.get(key)
+    followup = re.match(r"^(?:and |what about |how about |tell me more|more detail|dig deeper)", text, re.I)
+    if followup and previous and time.monotonic() - previous[2] < 300:
+        kind, topic, _ = previous
+        question = topic + ". Follow-up question: " + text
+        text = ("Search local files for " if kind == "local" else "Search the web for ") + question
+    result = _answer(text, root, chat, get)
+    if result:
+        local = LOCAL.fullmatch(text.rstrip("?.!"))
+        web = WEB.fullmatch(text.rstrip("?.!"))
+        if local:
+            _recent[key] = ("local", local[1], time.monotonic())
+        elif web or re.search(r"\b(?:latest|current|today|tomorrow|this week|next month|upcoming)\b", text, re.I):
+            _recent[key] = ("web", web[1] if web else text, time.monotonic())
+    elif not followup:
+        _recent.pop(key, None)
+    return result
