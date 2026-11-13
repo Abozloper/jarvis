@@ -116,3 +116,23 @@ with TemporaryDirectory() as folder:
     assert not (root / "Approved").exists()
     assert "Saved both" in ops.answer("Approve drafts for job J-17", root)
     assert "Vendor confirmed a backorder" in (root / "Approved" / "J-17-drafts.txt").read_text(encoding="utf-8")
+
+with TemporaryDirectory() as folder:
+    root = Path(folder)
+    (root / "Data").mkdir()
+    (root / "Data" / "jobs.json").write_text(json.dumps([
+        {"id":"J-1","title":"Private customer installation","status":"delayed",
+         "blocker":"Check supplier availability","public_query":"example topic"}
+    ]), encoding="utf-8")
+    ops = Operations()
+    for command in ["Brief me on today's operations", "Open the delayed job",
+                    "Draft the customer update and an internal follow-up task"]:
+        answer = ops.answer(command, root, chat=fake_chat, get=get_web)
+        assert "https://example.org" in answer
+    assert not (root / "Approved").exists()
+    assert "Saved both" in ops.answer("Approve drafts for job J-1", root)
+    assert "https://example.org" in (root / "Approved" / "J-1-drafts.txt").read_text(encoding="utf-8")
+    def offline(*args, **kwargs):
+        raise OSError("offline")
+    assert "couldn't reach web search" in ops.answer("Open the delayed job", root, get=offline)
+print("Operations web integration tests passed")
