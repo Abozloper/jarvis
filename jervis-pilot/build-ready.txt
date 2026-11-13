@@ -1,1 +1,1 @@
-Build Jarvis v7 with web and local data search and pipeline summaries.
+Build and verify Jarvis v8 operations workflows and source routes.
