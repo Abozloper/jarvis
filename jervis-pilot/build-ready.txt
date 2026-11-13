@@ -1,1 +1,1 @@
-Build v11 conversational retrieval and speech refinements.
+Build refined v11 with deterministic memory database cleanup.
