@@ -90,6 +90,27 @@ def stage(root):
             answer.raise_for_status()
             if "blue" not in answer.json()["message"]["content"].casefold():
                 raise RuntimeError("CPU model failed the inference check")
+            import jarvis_memory
+            os.environ["JARVIS_MASTER_DIR"] = str(root)
+            jarvis_memory.start(root.parent / "memory-smoke", URL)
+            jarvis_memory.retain("When is the valve shipping?",
+                                 "Bluefin ships the cobalt valve November 20, 2026. Source https://example.org/valve")
+            for _ in range(240):
+                with jarvis_memory.connect() as db:
+                    synced = db.execute("SELECT COUNT(*) FROM research WHERE synced=1").fetchone()[0]
+                if synced:
+                    break
+                if jarvis_memory._process and jarvis_memory._process.poll() is not None:
+                    raise RuntimeError(jarvis_memory.command("memory status"))
+                time.sleep(2)
+            else:
+                raise RuntimeError("Bundled Hindsight did not retain research")
+            recalled = jarvis_memory.recall("When does Bluefin ship the cobalt valve?")
+            if "bluefin" not in recalled.casefold():
+                raise RuntimeError("Bundled Hindsight failed recall")
+            print("Bundled Hindsight background research retention and recall passed")
+            jarvis_memory.stop()
+            os.environ.pop("JARVIS_MASTER_DIR", None)
         finally:
             server.terminate()
             server.wait(timeout=20)
