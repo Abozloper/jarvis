@@ -22,6 +22,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
+          $env:PYTHONPATH = (Resolve-Path jervis-pilot).Path
           python -m compileall -q jervis-pilot
           python jervis-pilot/check_pilot.py
           python jervis-pilot/check_knowledge.py
