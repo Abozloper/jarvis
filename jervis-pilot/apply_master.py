@@ -59,7 +59,7 @@ replace("selftest.py", "            heard = stt_local.transcribe_full(clip.getva
                     raise RuntimeError(f"Speech fixture was not recognized: {spoken!r}")
             else:
                 heard = stt_local.transcribe_full(clip.getvalue())'''.lstrip("\n"))
-replace("app.py", "import local_llm\n", "import local_llm\nimport jarvis_pilot\nimport jarvis_research\n")
+replace("app.py", "import local_llm\n", "import local_llm\nimport jarvis_pilot\nimport jarvis_research\nimport jarvis_sources\n")
 replace("app.py", "    last_turn_typed = typed\n    if isinstance(text, ImageCaption):", """
     last_turn_typed = typed
     if not isinstance(text, ImageCaption):
@@ -69,10 +69,14 @@ replace("app.py", "    last_turn_typed = typed\n    if isinstance(text, ImageCap
         researched = jarvis_research.answer(text) if os.getenv("JARVIS_MASTER_DIR") else None
         if researched:
             return researched
+        if os.getenv("JARVIS_MASTER_DIR"):
+            sourced = jarvis_sources.answer(text, paths.data("Pilot"), local_llm.chat)
+            if sourced:
+                return PrivateReply(sourced)
     if isinstance(text, ImageCaption):""".lstrip("\n"))
 package = root / "package.json"
 metadata = json.loads(package.read_text(encoding="utf-8"))
-metadata["version"] = "1.0.11"
+metadata["version"] = "1.0.12"
 metadata["build"]["extraResources"].append({"from": "offline", "to": "offline", "filter": ["**/*"]})
 package.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
 # Keep the bundled CPU model on one small context across warm-up and conversation.
