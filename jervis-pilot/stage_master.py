@@ -101,7 +101,7 @@ def stage(root):
                 if synced:
                     break
                 if jarvis_memory._process and jarvis_memory._process.poll() is not None:
-                    raise RuntimeError(jarvis_memory.command("memory status"))
+                    raise RuntimeError((jarvis_memory._root / "hindsight.log").read_text(encoding="utf-8", errors="replace")[-15000:])
                 time.sleep(2)
             else:
                 raise RuntimeError("Bundled Hindsight did not retain research")
