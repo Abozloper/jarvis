@@ -1,5 +1,6 @@
 """Operations briefing and approval-gated drafts from local job records."""
 import json
+import hashlib
 import re
 from datetime import date
 from pathlib import Path
@@ -24,7 +25,27 @@ class Operations:
     def answer(self, text, root, today=None, chat=None, get=requests.get):
         text = " ".join(text.strip().rstrip(".!?").casefold().split())
         text = re.sub(r"^(?:hey )?(?:jarvis|jervis)[, ]+\s*", "", text)
-        root = Path(root)
+        root = Path(root).resolve()
+        if self.selected and self.selected[0] != root:
+            self.selected = None
+            self.pending = None
+        aliases = {
+            "what needs my attention": "operations brief",
+            "what needs my attention today": "operations brief",
+            "what are my priorities today": "operations brief",
+            "how is the business doing today": "operations brief",
+            "what's holding it up": "open the delayed job",
+            "what is holding it up": "open the delayed job",
+            "why is it delayed": "open the delayed job",
+            "draft an update": "draft the customer update and an internal follow-up task",
+            "draft a customer update": "draft the customer update and an internal follow-up task",
+            "prepare the follow-up": "draft the customer update and an internal follow-up task",
+        }
+        contextual = text in {"what's holding it up", "what is holding it up", "why is it delayed"}
+        text = aliases.get(text, text)
+        if contextual and self.selected:
+            text += " " + self.selected[1]
+        text = re.sub(r"^(?:open|investigate|show me) (?:job|record) ([a-z0-9_-]+)$", r"open the delayed job \1", text)
         today = today or date.today()
         brief = re.match(r"^(?:brief me on (?:today['’]s )?operations|(?:give me )?(?:my |today['’]s )?operations brief)", text)
         investigate = re.match(r"^(?:open|investigate|show me) (?:the )?delayed job(?: ([a-z0-9_-]+))?(?=[ ,.]|$)", text)
@@ -36,7 +57,14 @@ class Operations:
         if approve:
             if not self.pending or self.pending[0].casefold() != approve[1] or self.pending[2] != root:
                 return "There are no pending drafts for that job. Ask me to draft them first."
-            job_id, preview, _ = self.pending
+            job_id, preview, _, fingerprint = self.pending
+            try:
+                current = hashlib.sha256((root / "Data" / "jobs.json").read_bytes()).hexdigest()
+            except OSError:
+                return "I couldn't recheck the job records. Restore Data/jobs.json before approving."
+            if current != fingerprint:
+                self.pending = None
+                return "The job records changed after this draft. Ask me to draft it again before approving."
             try:
                 folder = root / "Approved"
                 folder.mkdir(exist_ok=True)
@@ -119,5 +147,5 @@ class Operations:
         research = self.external(job, chat, get)
         if research:
             preview += research
-        self.pending = (job_id, preview, root)
+        self.pending = (job_id, preview, root, hashlib.sha256((root / "Data" / "jobs.json").read_bytes()).hexdigest())
         return preview + f"\n\nSay approve drafts for job {job_id} to save both locally, or cancel drafts."
