@@ -18,6 +18,18 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $true
           python -m pip install "hindsight-api-slim[local-onnx,embedded-db]==1.2.1" flashrank
           python -c "import hindsight_api; import pg0; print('Native Hindsight imports passed')"
+      - name: Start local model for Hindsight
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Invoke-WebRequest 'https://github.com/ollama/ollama/releases/download/v0.34.4/ollama-windows-amd64.zip' -OutFile ollama.zip
+          Expand-Archive ollama.zip -DestinationPath ollama
+          $env:OLLAMA_HOST = '127.0.0.1:11535'
+          $env:OLLAMA_NO_CLOUD = '1'
+          Start-Process -FilePath "$pwd/ollama/ollama.exe" -ArgumentList 'serve' -WindowStyle Hidden
+          Start-Sleep -Seconds 5
+          & ./ollama/ollama.exe pull qwen2.5:1.5b
+          if ($LASTEXITCODE -ne 0) { throw 'Local model setup failed' }
       - name: Start native service and verify database
         shell: pwsh
         env:
