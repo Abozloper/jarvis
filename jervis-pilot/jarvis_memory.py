@@ -49,6 +49,7 @@ def run(ollama_url):
     try:
         runtime = Path(os.environ["JARVIS_MASTER_DIR"]) / "hindsight"
         env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8",
+                   HINDSIGHT_API_MCP_ENABLED="false",
                    HINDSIGHT_API_LLM_PROVIDER="ollama",
                    HINDSIGHT_API_LLM_BASE_URL=ollama_url,
                    HINDSIGHT_API_LLM_MODEL="qwen2.5:1.5b",
