@@ -65,3 +65,30 @@ assert "1. Example Film" in result and "A Series" not in result and "Game" not i
 assert "release order" in result and "Source:" in result
 assert jarvis_research.answer("Open Netflix") is None
 assert "US catalog only" in jarvis_research.answer("Movies coming to Netflix next month in Colombia")
+
+import jarvis_sources
+
+with TemporaryDirectory() as folder:
+    root = Path(folder)
+    data = root / "Data"
+    data.mkdir()
+    (data / "pipeline.csv").write_text("Company,Status\nGems,Open\nAcme,Won\n", encoding="utf-8")
+    def no_web(*args, **kwargs):
+        raise AssertionError("Local data must stay local")
+    assert "2 records" in jarvis_sources.answer("Summarize my sales pipeline", root, fake_chat, no_web)
+    assert "Gems,Open" in jarvis_sources.answer("Search local datasets for Gems", root, fake_chat, no_web)
+    assert jarvis_sources.answer("Look up Fleetwood Mac on Spotify", root, fake_chat, no_web) is None
+    assert jarvis_sources.answer("Look up my notes about Gems", root, fake_chat, no_web) is None
+    class WebResponse(CalendarResponse):
+        def raise_for_status(self):
+            pass
+        class raw:
+            @staticmethod
+            def read(*args, **kwargs):
+                return (b'<a class="result__a" href="https://example.org">Example</a>'
+                        b'<a class="result__snippet">Verified example excerpt</a>')
+    def get_web(url, **kwargs):
+        assert kwargs["params"]["q"] == "example topic"
+        return WebResponse()
+    result = jarvis_sources.answer("Search the web for example topic", root, fake_chat, get_web)
+    assert "Verified example excerpt" in result and "https://example.org" in result
