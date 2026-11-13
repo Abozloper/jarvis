@@ -1,1 +1,1 @@
-Verify Hindsight Windows UTF-8 service startup.
+Verify native Hindsight retain recall restart.
