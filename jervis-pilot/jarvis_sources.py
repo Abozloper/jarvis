@@ -7,6 +7,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
 import requests
+import jarvis_memory
 
 WEB = re.compile(r"^(?:please )?(?:search (?:the web|the internet|online|google)(?: for)?|research|look up) (.+)$", re.I)
 LOCAL = re.compile(r"^(?:search|look up|find in) (?:my )?(?:local (?:files|data|datasets)|datasets)(?: for)? (.+)$", re.I)
@@ -68,8 +69,10 @@ def public_web(query, chat, get):
         reply = ""
     if not re.search(r"\[[1-" + str(len(items)) + r"]\]", reply):
         reply = "\n".join(f"[{i}] {item[2]}" for i, item in enumerate(items, 1))
-    return reply + "\n\n" + "\n".join(f"[{i}] {title}: {url}"
+    answer = reply + "\n\n" + "\n".join(f"[{i}] {title}: {url}"
                                       for i, (url, title, _) in enumerate(items, 1))
+    jarvis_memory.retain(query, answer)
+    return answer
 
 
 def local_search(query, folder):
