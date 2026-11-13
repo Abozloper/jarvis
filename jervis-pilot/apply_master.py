@@ -85,7 +85,7 @@ replace("app.py", "    last_turn_typed = typed\n    if isinstance(text, ImageCap
     if isinstance(text, ImageCaption):""".lstrip("\n"))
 package = root / "package.json"
 metadata = json.loads(package.read_text(encoding="utf-8"))
-metadata["version"] = "1.0.15"
+metadata["version"] = "1.0.16"
 metadata["build"]["extraResources"].append({"from": "offline", "to": "offline", "filter": ["**/*"]})
 package.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
 # Keep the bundled CPU model on one small context across warm-up and conversation.
@@ -97,8 +97,8 @@ replace("app.py", '        kwargs = {"model": GROQ_MODEL, "messages": trim_for_a
         prompt = trim_for_ai(with_verified_math(messages, user_text))
         kwargs = {"model": GROQ_MODEL, "messages": prompt}
         if os.getenv("JARVIS_MASTER_DIR") and LLM_BACKEND == "ollama" and not tools:
-            system = ("You are Jarvis, a local desktop assistant. Answer directly. "
-                      "Be concise unless asked for detail. Never claim you performed a computer action. "
+            system = ("You are Jarvis, a warm, practical conversational assistant. Answer the actual question first. "
+                      "Use natural sentences and contractions. Follow the recent conversation and resolve follow-ups from context. Ask one focused question only when essential information is missing. Avoid repetitive introductions. Never claim you performed a computer action. "
                       "Use the supplied date and verified facts when relevant.")
             if prompt and prompt[0].get("role") == "system":
                 _, marker, clock = prompt[0]["content"].rpartition("- Right now it is ")
@@ -115,7 +115,7 @@ replace("app.py", '        kwargs = {"model": GROQ_MODEL, "messages": trim_for_a
                        and not m.get("tool_calls")][-6:]
             kwargs["messages"] = [{"role": "system", "content": system}, *history]
             kwargs["max_tokens"] = (256 if re.search(r"\\b(detail(?:ed|s)?|step.by.step|long|full)\\b",
-                                                    user_text, re.I) else (96 if last_turn_typed else 48))'''.lstrip("\n"))
+                                                    user_text, re.I) else (160 if last_turn_typed else 112))'''.lstrip("\n"))
 
 replace("app.py", "    context = language_context()\n    if pending:", '''
     if (os.getenv("JARVIS_MASTER_DIR") and LLM_BACKEND == "ollama"
@@ -130,3 +130,7 @@ replace("local_llm.py", '    def __enter__(self) -> dict:\n        if (os.getenv
         if os.getenv("JARVIS_MASTER_DIR") and self.model == "qwen2.5:1.5b":
             return {"num_gpu": 0}
         if (os.getenv("JARVIS_GPU_FIT")'''.lstrip("\n"))
+
+# Keep citations visible while speaking a clean, natural answer.
+replace("app.py", '    text = _latex_to_speech(text)', '    text = _latex_to_speech(text)\\n    if os.getenv("JARVIS_MASTER_DIR"):\\n        text = re.sub(r"https?://\\\\S+", "", text)\\n        text = re.sub(r"\\\\[\\\\d+(?:,\\\\s*\\\\d+)*\\\\]", "", text)')
+replace("osal.py", 'if ($env:JARVIS_VOLUME) { $s.Volume = [int]$env:JARVIS_VOLUME }', 'if ($env:JARVIS_VOLUME) { $s.Volume = [int]$env:JARVIS_VOLUME }\\nif ($env:JARVIS_MASTER_DIR) { $s.Rate = -1 }')
