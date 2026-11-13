@@ -136,3 +136,23 @@ with TemporaryDirectory() as folder:
         raise OSError("offline")
     assert "couldn't reach web search" in ops.answer("Open the delayed job", root, get=offline)
 print("Operations web integration tests passed")
+
+with TemporaryDirectory() as folder:
+    root = Path(folder)
+    (root / "Data").mkdir()
+    (root / "Data" / "jobs.txt").write_text("Cobalt pump awaiting delivery\nBluefin valve approved", encoding="utf-8")
+    assert "Cobalt pump" in jarvis_sources.answer("Jarvis, search local files for cobalt", root, fake_chat, no_web)
+    assert "Bluefin valve" in jarvis_sources.answer("What about Bluefin?", root, fake_chat, no_web)
+    assert "What topic" in jarvis_sources.local_search("what is the", root / "Data")
+    jarvis_sources.answer("Open Spotify", root, fake_chat, no_web)
+    assert jarvis_sources.answer("What about Bluefin?", root, fake_chat, no_web) is None
+
+import jarvis_memory
+with TemporaryDirectory() as folder:
+    jarvis_memory._root = Path(folder)
+    jarvis_memory.retain("Cobalt valve delivery", "Bluefin ships November 20. Source https://example.org/valve")
+    result = jarvis_memory.archive_search("What did we find about the cobalt valve?")
+    assert "Bluefin" in result and "https://example.org/valve" in result
+    assert jarvis_memory.archive_search("what about the") == ""
+    jarvis_memory._root = None
+print("Conversational retrieval regression checks passed")
