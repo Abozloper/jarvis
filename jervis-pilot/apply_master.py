@@ -64,7 +64,7 @@ replace("app.py", "    last_turn_typed = typed\n    if isinstance(text, ImageCap
     last_turn_typed = typed
     if not isinstance(text, ImageCaption):
         if os.getenv("JARVIS_MASTER_DIR"):
-            operational = operations.answer(text, paths.data("Pilot"))
+            operational = operations.answer(text, paths.data("Pilot"), chat=local_llm.chat)
             if operational:
                 return PrivateReply(operational)
         reply = jarvis_pilot.handle(text, paths.data("Pilot"), local_llm.chat, local_llm.URL)
@@ -80,7 +80,7 @@ replace("app.py", "    last_turn_typed = typed\n    if isinstance(text, ImageCap
     if isinstance(text, ImageCaption):""".lstrip("\n"))
 package = root / "package.json"
 metadata = json.loads(package.read_text(encoding="utf-8"))
-metadata["version"] = "1.0.13"
+metadata["version"] = "1.0.14"
 metadata["build"]["extraResources"].append({"from": "offline", "to": "offline", "filter": ["**/*"]})
 package.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
 # Keep the bundled CPU model on one small context across warm-up and conversation.
