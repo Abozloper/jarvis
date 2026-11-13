@@ -21,6 +21,19 @@ URL = "http://127.0.0.1:11535"
 
 def stage(root):
     root.mkdir(parents=True, exist_ok=True)
+    runtime = root / "hindsight"
+    runtime.mkdir(exist_ok=True)
+    response = requests.get("https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip", timeout=120)
+    response.raise_for_status()
+    import io
+    with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+        archive.extractall(runtime)
+    (runtime / "python312._pth").write_text("python312.zip\n.\nsite-packages\nimport site\n", encoding="utf-8")
+    subprocess.run([sys.executable, "-m", "pip", "install", "--target", str(runtime / "site-packages"),
+                    "hindsight-api-slim[local-onnx,embedded-db]==1.2.1", "flashrank", "hindsight-client"],
+                   check=True, timeout=900)
+    subprocess.run([str(runtime / "python.exe"), "-c", "import hindsight_api, pg0, hindsight_client"],
+                   check=True, timeout=60)
     with tempfile.TemporaryDirectory() as temp:
         archive = Path(temp) / ENGINE
         digest = hashlib.sha256()
