@@ -29,7 +29,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           git -C upstream checkout --detach FETCH_HEAD
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          Copy-Item jervis-pilot/jarvis_pilot.py,jervis-pilot/jarvis_research.py,jervis-pilot/jarvis_sources.py,jervis-pilot/jarvis_operations.py,jervis-pilot/jarvis_memory.py upstream/
+          Copy-Item jervis-pilot/jarvis_pilot.py,jervis-pilot/jarvis_research.py,jervis-pilot/jarvis_sources.py,jervis-pilot/jarvis_operations.py,jervis-pilot/jarvis_memory.py,jervis-pilot/jarvis_knowledge.py upstream/
           python jervis-pilot/apply_master.py upstream
           node --check upstream/backend.js
           node --check upstream/renderer.js
@@ -43,10 +43,11 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
-          python -m pip install -r requirements.txt -r requirements-dev.txt pyinstaller
+          python -m pip install -r requirements.txt -r requirements-dev.txt pyinstaller pypdf==7.0.1
           python -m pytest -q tests/test_local_ai.py tests/test_nlu.py
           $env:PYTHONPATH = (Resolve-Path ../jervis-pilot).Path
           python ../jervis-pilot/check_pilot.py
+          python ../jervis-pilot/check_knowledge.py
           Remove-Item Env:PYTHONPATH
       - name: Package and smoke-test installer
         working-directory: upstream
@@ -96,4 +97,4 @@ jobs:
           cd upstream/release
           mv 'Jarvis Setup.exe' Jarvis-Windows-Master-Setup.exe
           sha256sum Jarvis-Windows-Master-Setup.exe > SHA256SUMS.txt
-          gh release create jarvis-windows-master-v11 Jarvis-Windows-Master-Setup.exe SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Jarvis Windows Master Installer v11" --prerelease --notes "Refines conversational replies, research follow-ups, local matching, saved research fallback and spoken delivery. Integrates local Hindsight research memory with background indexing and recall. Adds automatic public-query research within operations briefings, investigations and drafts, with saved source links. Adds operations briefs, delay evidence, and approval-gated local drafts alongside public web and local dataset search. Single Windows x64 installer with bundled CPU Ollama, Qwen2.5 1.5B, and English Whisper speech recognition. Hindsight memory models and database binaries download automatically on first use. Close Jarvis from the system tray before upgrading. The installer is unsigned. Voice uses an available Windows system voice. This edition focuses on voice, notes and local text workflows."
+          gh release create jarvis-windows-master-v12 Jarvis-Windows-Master-Setup.exe SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "Jarvis Windows Master Installer v12" --prerelease --notes "Adds cached local PDF, DOCX and text retrieval with source references, exact CSV aggregation, natural operations commands and stale-draft protection. Refines conversational replies, research follow-ups, local matching, saved research fallback and spoken delivery. Integrates local Hindsight research memory with background indexing and recall. Adds automatic public-query research within operations briefings, investigations and drafts, with saved source links. Adds operations briefs, delay evidence, and approval-gated local drafts alongside public web and local dataset search. Single Windows x64 installer with bundled CPU Ollama, Qwen2.5 1.5B, and English Whisper speech recognition. Hindsight memory models and database binaries download automatically on first use. Close Jarvis from the system tray before upgrading. The installer is unsigned. Voice uses an available Windows system voice. This edition focuses on voice, notes and local text workflows."
