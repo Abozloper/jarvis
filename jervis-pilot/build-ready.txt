@@ -1,1 +1,1 @@
-Build refined v11 with deterministic memory database cleanup.
+Build v11 with original-source grounding alongside Hindsight facts.
