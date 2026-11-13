@@ -1,1 +1,1 @@
-Verify Hindsight with actual local Ollama service.
+Verify Hindsight Windows UTF-8 service startup.
