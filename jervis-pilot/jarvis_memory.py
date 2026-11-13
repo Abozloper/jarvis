@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import sqlite3
 import subprocess
@@ -113,9 +114,10 @@ def recall(query):
         response = _session.post(BANK + "/recall", json={"query":query,"max_tokens":700}, timeout=(1,3))
         response.raise_for_status()
         facts = response.json().get("results", [])
-        return "\n".join(str(item.get("text","")) for item in facts[:5])
+        recalled = "\n".join(str(item.get("text","")) for item in facts[:5])
+        return recalled or archive_search(query)
     except (requests.RequestException, ValueError):
-        return ""
+        return archive_search(query)
 
 def command(text):
     clean = text.strip().rstrip(".!?").casefold()
@@ -129,3 +131,24 @@ def command(text):
                 return "Previously saved information; dates and details may have changed.\n" + facts
             return "No indexed memory was retrieved. " + _status
     return None
+
+def archive_search(query):
+    if _root is None:
+        return ""
+    words = set(re.findall(r"\w{3,}", query.casefold())) - set(
+        "what when where which about recall research remember please does the and for".split())
+    if not words:
+        return ""
+    try:
+        with connect() as db:
+            rows = db.execute("SELECT content, created FROM research ORDER BY created DESC LIMIT 200").fetchall()
+    except sqlite3.Error:
+        return ""
+    ranked = []
+    for content, created in rows:
+        score = len(words & set(re.findall(r"\w{3,}", content.casefold())))
+        if score:
+            ranked.append((score, created, content))
+    ranked.sort(reverse=True)
+    return "\n\n".join("Saved research (" + created + "):\n" + content[:1800]
+                         for _, created, content in ranked[:2])
