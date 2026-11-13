@@ -118,6 +118,20 @@ def pipeline_summary(folder):
 def _answer(text, root, chat, get=requests.get):
     text = text.strip().rstrip("?.!")
     folder = Path(root) / "Data"
+    if text.casefold() in {"jarvis help", "help with my data", "what can you do"}:
+        return ("Try these commands:\n"
+                "- What do my files say about [topic]?\n"
+                "- Search the web for [topic].\n"
+                "- Analyze sales.csv.\n"
+                "- Total Amount in sales.csv by Region.\n"
+                "- What needs my attention today?\n"
+                "- Open job J-17, then draft an update.\n"
+                "- Approve drafts for job J-17.\n"
+                "- Remember that [fact].\n"
+                "- Search my memory for [topic].\n"
+                "Add PDF, DOCX, TXT, Markdown, CSV or JSON documents to " + str(folder) +
+                ". Business operations use Data/jobs.json. Scanned PDFs need OCR. "
+                "Web access requires internet. Draft approval saves locally; it does not send messages.")
     analysis = jarvis_knowledge.csv_analysis(text, root)
     if analysis:
         return analysis
@@ -150,9 +164,9 @@ def answer(text, root, chat, get=requests.get):
         local = LOCAL.fullmatch(text.rstrip("?.!"))
         web = WEB.fullmatch(text.rstrip("?.!"))
         if local:
-            _recent[key] = ("local", local[1], time.monotonic())
+            _recent[key] = ("local", local[1].split(". Follow-up question:")[0][:500], time.monotonic())
         elif web or re.search(r"\b(?:latest|current|today|tomorrow|this week|next month|upcoming)\b", text, re.I):
-            _recent[key] = ("web", web[1] if web else text, time.monotonic())
+            _recent[key] = ("web", (web[1] if web else text).split(". Follow-up question:")[0][:500], time.monotonic())
     elif not followup:
         _recent.pop(key, None)
     return result
