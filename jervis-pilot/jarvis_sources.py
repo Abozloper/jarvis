@@ -51,8 +51,8 @@ class SearchResults(HTMLParser):
 def public_web(query, chat, get):
     today = date.today()
     next_month = (today.replace(day=28) + timedelta(days=4)).replace(day=1)
-    dated_query = re.sub(r"\\bnext month\\b", next_month.strftime("%B %Y"), query, flags=re.I)
-    dated_query = re.sub(r"\\bthis month\\b", today.strftime("%B %Y"), dated_query, flags=re.I)
+    dated_query = re.sub(r"\bnext month\b", next_month.strftime("%B %Y"), query, flags=re.I)
+    dated_query = re.sub(r"\bthis month\b", today.strftime("%B %Y"), dated_query, flags=re.I)
     try:
         parser = SearchResults()
         with get("https://html.duckduckgo.com/html/", params={"q": dated_query[:300]},
