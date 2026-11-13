@@ -1,1 +1,1 @@
-Build refined v11 with reliable build process cleanup.
+Build v12 with document knowledge, exact CSV analysis, conversational operations and public-query isolation.
