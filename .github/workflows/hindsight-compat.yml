@@ -1,0 +1,20 @@
+name: Hindsight Windows compatibility
+on:
+  push:
+    paths: ['jervis-pilot/hindsight-probe.txt']
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install native Hindsight dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          python -m pip install "hindsight-api-slim[local-onnx,embedded-db]==1.2.1" flashrank
+          python -c "import hindsight_api; import pg0; print('Native Hindsight imports passed')"
