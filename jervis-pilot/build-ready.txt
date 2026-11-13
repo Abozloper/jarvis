@@ -1,1 +1,1 @@
-Build and verify the Jarvis v6 Netflix research route.
+Build Jarvis v7 with web and local data search and pipeline summaries.
