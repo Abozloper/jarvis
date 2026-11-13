@@ -132,6 +132,12 @@ def _answer(text, root, chat, get=requests.get):
                 "Add PDF, DOCX, TXT, Markdown, CSV or JSON documents to " + str(folder) +
                 ". Business operations use Data/jobs.json. Scanned PDFs need OCR. "
                 "Web access requires internet. Draft approval saves locally; it does not send messages.")
+    combined = re.fullmatch(r"compare (?:my|our) (?:files|documents|data) about (.+?) with (?:web|online) research about (.+)", text, re.I)
+    if combined:
+        local_result = local_search(combined[1], folder, chat)
+        # Only the explicitly supplied public query goes to web search.
+        public_result = public_web(combined[2], chat, get)
+        return "LOCAL DOCUMENT EVIDENCE\n" + local_result + "\n\nPUBLIC WEB EVIDENCE\n" + public_result + "\nThe two evidence sets may refer to different contexts. Check source dates and entities before acting."
     analysis = jarvis_knowledge.csv_analysis(text, root)
     if analysis:
         return analysis
@@ -152,6 +158,8 @@ def _answer(text, root, chat, get=requests.get):
 
 def answer(text, root, chat, get=requests.get):
     text = re.sub(r"^(?:hey )?(?:jarvis|jervis)[, ]+", "", text.strip(), flags=re.I)
+    text = re.sub(r"^(?:(?:can|could|would) you |please )", "", text, flags=re.I)
+    text = re.sub(r"^find (?:information|info) (?:on|about) ", "Search the web for ", text, flags=re.I)
     key = str(Path(root).resolve())
     previous = _recent.get(key)
     followup = re.match(r"^(?:and |what about |how about |tell me more|more detail|dig deeper)", text, re.I)
