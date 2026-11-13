@@ -3,14 +3,25 @@ import json
 import re
 from datetime import date
 from pathlib import Path
+import requests
+from jarvis_sources import public_web
 
 
 class Operations:
     def __init__(self):
         self.selected = None
         self.pending = None
+        self.research = {}
 
-    def answer(self, text, root, today=None):
+    def external(self, job, chat, get):
+        query = job.get("public_query", "").strip()
+        if not query:
+            return ""
+        result = public_web(query, chat, get)
+        self.research[job["id"].casefold()] = result
+        return "\nPublic research (external context, relevance to this job requires verification):\n" + result
+
+    def answer(self, text, root, today=None, chat=None, get=requests.get):
         text = " ".join(text.strip().rstrip(".!?").casefold().split())
         text = re.sub(r"^(?:hey )?(?:jarvis|jervis)[, ]+\s*", "", text)
         root = Path(root)
@@ -52,7 +63,7 @@ class Operations:
                 if not isinstance(row, dict):
                     raise ValueError
                 job = {key: row.get(key, "") for key in (
-                    "id", "title", "status", "due", "blocker", "evidence", "owner", "next_step")}
+                    "id", "title", "status", "due", "blocker", "evidence", "owner", "next_step", "public_query")}
                 if (any(not isinstance(value, str) for value in job.values())
                         or not re.fullmatch(r"[A-Za-z0-9_-]{1,40}", job["id"])
                         or not job["title"] or not job["status"] or job["id"].casefold() in jobs):
@@ -73,6 +84,7 @@ class Operations:
             for job in urgent[:3]:
                 issue = job["blocker"] or (f"Due {job['due']}" if job["due"] else job["status"])
                 lines.append(f"{job['id']} — {job['title']}: {issue}. [Data/jobs.json, {job['id']}]")
+                lines.append(self.external(job, chat, get))
             return "\n".join(lines)
         if investigate:
             delayed = [job for job in urgent if job["status"].casefold() in {"blocked", "delayed"}]
@@ -87,11 +99,12 @@ class Operations:
                 job = delayed[0] if delayed else None
             if not job:
                 return "I couldn't find that job in Data/jobs.json."
+            self.pending = None
             self.selected = (root, job["id"].casefold())
             return (f"{job['id']} — {job['title']} ({job['status']}).\n"
                     f"Blocker: {job['blocker'] or 'Not recorded'}.\n"
                     f"Supporting evidence: {job['evidence'] or 'No evidence recorded'}.\n"
-                    f"Source: Data/jobs.json, record {job['id']}.")
+                    f"Source: Data/jobs.json, record {job['id']}.") + self.external(job, chat, get)
         job = jobs.get(self.selected[1]) if self.selected and self.selected[0] == root else None
         if not job:
             return "Open the delayed job first so I know which customer update to draft."
@@ -103,5 +116,8 @@ class Operations:
                 f"Evidence: {job['evidence'] or 'Not recorded'}\n"
                 f"Next step: {job['next_step'] or 'Verify the blocker and document a revised plan.'}")
         preview = f"CUSTOMER UPDATE\n{customer}\n\nINTERNAL FOLLOW-UP\n{task}\n\nSource: Data/jobs.json, record {job_id}."
+        research = self.external(job, chat, get)
+        if research:
+            preview += research
         self.pending = (job_id, preview, root)
         return preview + f"\n\nSay approve drafts for job {job_id} to save both locally, or cancel drafts."
