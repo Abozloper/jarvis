@@ -131,6 +131,6 @@ replace("local_llm.py", '    def __enter__(self) -> dict:\n        if (os.getenv
             return {"num_gpu": 0}
         if (os.getenv("JARVIS_GPU_FIT")'''.lstrip("\n"))
 
-# Keep citations visible while speaking a clean, natural answer.
-replace("app.py", '    text = _latex_to_speech(text)', '    text = _latex_to_speech(text)\\n    if os.getenv("JARVIS_MASTER_DIR"):\\n        text = re.sub(r"https?://\\\\S+", "", text)\\n        text = re.sub(r"\\\\[\\\\d+(?:,\\\\s*\\\\d+)*\\\\]", "", text)')
-replace("osal.py", 'if ($env:JARVIS_VOLUME) { $s.Volume = [int]$env:JARVIS_VOLUME }', 'if ($env:JARVIS_VOLUME) { $s.Volume = [int]$env:JARVIS_VOLUME }\\nif ($env:JARVIS_MASTER_DIR) { $s.Rate = -1 }')
+# Keep citations visible while speaking a clean answer.
+replace("app.py", "    text = _latex_to_speech(text)", "    text = _latex_to_speech(text)\n    if os.getenv(\"JARVIS_MASTER_DIR\"):\n        text = re.sub(r\"https?://\\S+\", \"\", text)\n        text = re.sub(r\"\\[\\d+(?:,\\s*\\d+)*\\]\", \"\", text)")
+replace("osal.py", "if ($env:JARVIS_VOLUME) { $s.Volume = [int]$env:JARVIS_VOLUME }", "if ($env:JARVIS_VOLUME) { $s.Volume = [int]$env:JARVIS_VOLUME }\nif ($env:JARVIS_MASTER_DIR) { $s.Rate = -1 }")
