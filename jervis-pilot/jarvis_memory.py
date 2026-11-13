@@ -58,7 +58,7 @@ def run(ollama_url):
                    HINDSIGHT_API_WORKER_ID="jarvis-desktop")
         _status = "Hindsight is starting. First use downloads its local memory models and database binaries."
         with (_root / "hindsight.log").open("a", encoding="utf-8") as log:
-            _process = subprocess.Popen([str(runtime / "python.exe"), "-m", "hindsight_api.main",
+            _process = subprocess.Popen([str(runtime / "python.exe"), "-X", "utf8", "-m", "hindsight_api.main",
                                          "--host", "127.0.0.1", "--port", "8899"],
                                         env=env, cwd=str(_root), stdout=log, stderr=log,
                                         creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
