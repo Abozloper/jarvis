@@ -1,1 +1,1 @@
-Build and verify Jarvis v8 operations workflows and source routes.
+Build v9 with integrated business web research and source retention.
