@@ -121,7 +121,8 @@ def recall(query):
         response.raise_for_status()
         facts = response.json().get("results", [])
         recalled = "\n".join(str(item.get("text","")) for item in facts[:5])
-        return recalled or archive_search(query)
+        original = archive_search(query)
+        return "\n\n".join(part for part in (recalled, original) if part)
     except (requests.RequestException, ValueError):
         return archive_search(query)
 
