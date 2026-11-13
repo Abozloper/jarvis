@@ -21,3 +21,7 @@ Put a UTF-8 JSON array in `%APPDATA%\Jarvis\Pilot\Data\jobs.json`. Each job need
 ```
 
 Say “Brief me on today's operations,” “Open the delayed job J-17,” then “Draft the customer update and an internal follow-up task.” Review the preview and say “Approve drafts for job J-17” to save both to the local Pilot/Approved folder.
+
+## Online business research
+
+Add an optional `public_query` string to each job, for example `"public_query": "Acme pump X100 availability"`. Use public supplier names, product identifiers or city-level weather queries. Jarvis automatically searches this query during the operations briefing, investigation and draft preparation, and includes source links in the preview and approved local output. Search queries are sent to DuckDuckGo. Other job fields remain local. Search excerpts provide external context and do not establish the cause of a private job delay. Internet access is required. Without a public query, the job uses local evidence. Questions asking for latest/current public information also route to web search.
