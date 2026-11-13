@@ -105,6 +105,10 @@ def stage(root):
                 time.sleep(2)
             else:
                 raise RuntimeError("Bundled Hindsight did not retain research")
+            verified = requests.post(jarvis_memory.BANK + "/recall", json={"query":"Bluefin cobalt valve"}, timeout=30)
+            verified.raise_for_status()
+            if not verified.json().get("results"):
+                raise RuntimeError("Hindsight returned no indexed facts")
             recalled = jarvis_memory.recall("When does Bluefin ship the cobalt valve?")
             if "bluefin" not in recalled.casefold():
                 raise RuntimeError("Bundled Hindsight failed recall")
