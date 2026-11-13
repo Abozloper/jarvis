@@ -80,3 +80,27 @@ with TemporaryDirectory() as folder:
     assert "Saved both" in ops.answer("Approve drafts for job J-1", root)
 
 print("Knowledge, document formats, exact CSV calculations and stale approval checks passed")
+
+with TemporaryDirectory() as folder:
+    root = Path(folder)
+    (root / "Data").mkdir()
+    (root / "Data" / "private.txt").write_text("Cobalt account secret internal reference.", encoding="utf-8")
+    calls = []
+    class Response:
+        def __enter__(self): return self
+        def __exit__(self, *args): return False
+        def raise_for_status(self): pass
+        class raw:
+            @staticmethod
+            def read(*args, **kwargs):
+                return b'<a class="result__a" href="https://example.org/public">Public</a><a class="result__snippet">Public supplier information.</a>'
+    def public_get(url, **kwargs):
+        calls.append(kwargs["params"]["q"])
+        return Response()
+    result = answer("Compare my documents about Cobalt with web research about public suppliers", root, None, public_get)
+    assert calls == ["public suppliers"]
+    assert "LOCAL DOCUMENT EVIDENCE" in result and "PUBLIC WEB EVIDENCE" in result
+    assert "secret internal" in result
+    assert "exact" not in result.casefold()  # no claim the independent sources establish a match
+    assert "Data" in answer("What can you do?", root, None, public_get)
+print("Combined research keeps document content out of public search")
