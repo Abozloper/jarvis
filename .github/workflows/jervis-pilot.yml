@@ -60,6 +60,7 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $true
           python ../jervis-pilot/stage_master.py offline
           Copy-Item LICENSE offline/Jervis-LICENSE.txt
+          Copy-Item ../jervis-pilot/V12-GUIDE.md offline/Jarvis-Guide.md
       - name: Freeze Python backend
         working-directory: upstream
         shell: pwsh
