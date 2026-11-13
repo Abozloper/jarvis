@@ -117,7 +117,12 @@ def stage(root):
             os.environ.pop("JARVIS_MASTER_DIR", None)
         finally:
             server.terminate()
-            server.wait(timeout=20)
+            try:
+                server.wait(timeout=20)
+            except subprocess.TimeoutExpired:
+                subprocess.run(["taskkill", "/PID", str(server.pid), "/T", "/F"], check=False, timeout=20)
+                server.kill()
+                server.wait(timeout=20)
     print("Bundled CPU Ollama and local text inference passed")
 
 
