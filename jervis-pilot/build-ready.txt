@@ -1,1 +1,1 @@
-Build Hindsight v10 with embedded Python UTF-8 startup fix.
+Build Hindsight v10 with HTTP service configuration.
