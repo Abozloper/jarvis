@@ -49,7 +49,7 @@ jobs:
           python ../jervis-pilot/check_pilot.py
           python ../jervis-pilot/check_knowledge.py
           Remove-Item Env:PYTHONPATH
-      - name: Package and smoke-test installer
+      - name: Stage and test local models and Hindsight
         working-directory: upstream
         shell: pwsh
         env:
@@ -60,7 +60,25 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $true
           python ../jervis-pilot/stage_master.py offline
           Copy-Item LICENSE offline/Jervis-LICENSE.txt
+      - name: Freeze Python backend
+        working-directory: upstream
+        shell: pwsh
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          JARVIS_AUDIO: 'off'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
           pyinstaller --noconfirm --distpath backend-dist --workpath build/pyinstaller jarvis-backend.spec
+      - name: Verify packaged speech recognition
+        working-directory: upstream
+        shell: pwsh
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          JARVIS_AUDIO: 'off'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
           $env:JARVIS_MASTER_DIR = (Resolve-Path offline).Path
           $env:JARVIS_DATA_DIR = Join-Path $env:RUNNER_TEMP 'Jarvis speech test'
           $env:HF_HUB_OFFLINE = '1'
@@ -79,9 +97,27 @@ jobs:
           powershell.exe -NoProfile -NonInteractive -File (Join-Path $env:RUNNER_TEMP 'jarvis-speech.ps1')
           & ./backend-dist/jarvis-backend/jarvis-backend.exe --selftest --speech
           Remove-Item Env:JARVIS_MASTER_DIR,Env:JARVIS_DATA_DIR,Env:HF_HUB_OFFLINE,Env:JARVIS_TEST_SPEECH_WAV
+      - name: Build desktop installer
+        working-directory: upstream
+        shell: pwsh
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          JARVIS_AUDIO: 'off'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
           npm ci
           npx electron-builder --win --publish never
           if ((Get-Item 'release/Jarvis Setup.exe').Length -ge 2GB) { throw 'Master installer exceeds the release asset limit.' }
+      - name: Verify installed desktop application
+        working-directory: upstream
+        shell: pwsh
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          JARVIS_AUDIO: 'off'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
           ./tests/installer/windows_smoke.ps1 -Installer 'release/Jarvis Setup.exe'
       - uses: actions/upload-artifact@v4
         with:
