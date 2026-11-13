@@ -33,6 +33,8 @@ jobs:
       - name: Start native service and verify database
         shell: pwsh
         env:
+          PYTHONUTF8: '1'
+          PYTHONIOENCODING: utf-8
           HINDSIGHT_API_LLM_PROVIDER: ollama
           HINDSIGHT_API_LLM_BASE_URL: http://127.0.0.1:11535
           HINDSIGHT_API_LLM_MODEL: qwen2.5:1.5b
