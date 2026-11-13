@@ -26,3 +26,6 @@ jobs:
           python -m compileall -q jervis-pilot
           python jervis-pilot/check_pilot.py
           python jervis-pilot/check_knowledge.py
+
+      - name: Measure local retrieval overhead
+        run: python jervis-pilot/benchmark_knowledge.py
