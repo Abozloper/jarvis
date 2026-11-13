@@ -25,3 +25,13 @@ Say “Brief me on today's operations,” “Open the delayed job J-17,” then 
 ## Online business research
 
 Add an optional `public_query` string to each job, for example `"public_query": "Acme pump X100 availability"`. Use public supplier names, product identifiers or city-level weather queries. Jarvis automatically searches this query during the operations briefing, investigation and draft preparation, and includes source links in the preview and approved local output. Search queries are sent to DuckDuckGo. Other job fields remain local. Search excerpts provide external context and do not establish the cause of a private job delay. Internet access is required. Without a public query, the job uses local evidence. Questions asking for latest/current public information also route to web search.
+
+## Hindsight memory in v10
+
+The installer includes Hindsight 1.2.1 and its own Python runtime. On first use, remain connected to the internet while Hindsight automatically downloads its embedding model, reranker and embedded database binaries. Ask "memory status" to see progress.
+
+Successful web research is saved immediately in `Pilot/Memory/research.sqlite3`, including the question, answer, source links and retrieval date. A background worker indexes the saved research in Hindsight and retries failed ingestion. The Hindsight database persists in the Windows user's default Hindsight data directory. Original research remains in the SQLite archive even while indexing is pending.
+
+Ask "search my memory for [topic]", "recall research about [topic]" or "what do you remember about [topic]". Relevant Hindsight facts are also supplied to ordinary conversational answers. Stored facts can become outdated. Current-information questions continue to use web search.
+
+Hindsight runs on this PC and uses the bundled Ollama model. First-time indexing can compete with conversation for CPU resources. Close Jarvis from the tray before upgrades. The memory service listens on loopback port 8899. Startup diagnostics are in `Pilot/Memory/hindsight.log`. Restart Jarvis to retry a failed startup.
