@@ -1,0 +1,36 @@
+name: Publish verified Jarvis v12
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publish-jarvis-v12.yml']
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Jarvis-Windows-Master
+          run-id: '43401415326'
+          github-token: ${{ github.token }}
+          path: release
+      - name: Publish tested installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cd release
+          mv 'Jarvis Setup.exe' Jarvis-Windows-Master-Setup.exe
+          sha256sum Jarvis-Windows-Master-Setup.exe > SHA256SUMS.txt
+          cat > notes.md <<'EOF'
+          Expanded local PDF, DOCX and text retrieval with citations, cached indexing, decimal CSV aggregation, conversational operations commands and stale-draft protection. Explicitly separated local and web evidence queries keep document content out of public search.
+
+          This is the exact installer artifact from build 43401415326, source commit 023d2b3d447c39054cbc2f2844812d85d60b4f96. Capability, local model, Hindsight, speech, fresh install, upgrade and uninstall checks passed. The original build failed only at release publication.
+
+          Close Jarvis from the system tray before upgrading. Ask “What can you do?” for supported commands and the Data folder. Windows x64, unsigned pilot installer. Includes CPU Ollama, Qwen2.5 1.5B, Whisper base.en and Hindsight runtime. Hindsight memory models and database binaries download on first use. Voice uses the installed Windows voice. Text PDFs are supported; scanned PDFs require OCR. CSV calculations use exact column names and a 10,000-record limit. Business operations require Data/jobs.json. Approved drafts save locally and are not sent.
+          EOF
+          gh release create jarvis-windows-master-v12 Jarvis-Windows-Master-Setup.exe SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --target jarvis-v12-tested --title "Jarvis Windows Master Installer v12" --prerelease --notes-file notes.md
