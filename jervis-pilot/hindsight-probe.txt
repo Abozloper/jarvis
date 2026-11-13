@@ -1,1 +1,1 @@
-Verify Hindsight 1.2.1 native Windows installation.
+Verify native Hindsight server startup and database.
