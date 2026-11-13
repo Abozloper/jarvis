@@ -8,6 +8,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 25
     steps:
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
@@ -16,7 +17,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $PSNativeCommandUseErrorActionPreference = $true
-          python -m pip install "hindsight-api-slim[local-onnx,embedded-db]==1.2.1" flashrank
+          python -m pip install "hindsight-api-slim[local-onnx,embedded-db]==1.2.1" flashrank hindsight-client requests
           python -c "import hindsight_api; import pg0; print('Native Hindsight imports passed')"
       - name: Start local model for Hindsight
         shell: pwsh
@@ -41,17 +42,4 @@ jobs:
           HINDSIGHT_API_EMBEDDINGS_PROVIDER: onnx
           HINDSIGHT_API_RERANKER_PROVIDER: flashrank
         run: |
-          $ErrorActionPreference = 'Stop'
-          $proc = Start-Process -FilePath (Get-Command hindsight-api).Source -ArgumentList '--host','127.0.0.1','--port','8899' -WindowStyle Hidden -PassThru -RedirectStandardOutput hindsight-out.log -RedirectStandardError hindsight-err.log
-          try {
-            for ($i=0; $i -lt 180; $i++) {
-              if ($proc.HasExited) { throw 'Hindsight exited during native startup' }
-              try { $response = Invoke-WebRequest http://127.0.0.1:8899/health -TimeoutSec 2; if ($response.StatusCode -eq 200) { exit 0 } } catch {}
-              Start-Sleep -Seconds 2
-            }
-            throw 'Hindsight startup timed out'
-          } finally {
-            Get-Content hindsight-out.log -Tail 100
-            Get-Content hindsight-err.log -Tail 100
-            if (-not $proc.HasExited) { Stop-Process -Id $proc.Id }
-          }
+          python jervis-pilot/check_hindsight.py
