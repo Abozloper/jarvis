@@ -1,5 +1,6 @@
 """Local Hindsight service with durable background ingestion."""
 import atexit
+from contextlib import contextmanager
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -22,10 +23,15 @@ _status = "Memory is starting."
 _session = requests.Session()
 _session.trust_env = False
 
+@contextmanager
 def connect():
     connection = sqlite3.connect(_root / "research.sqlite3", timeout=10)
     connection.execute("CREATE TABLE IF NOT EXISTS research (id TEXT PRIMARY KEY, content TEXT NOT NULL, created TEXT NOT NULL, synced INTEGER NOT NULL DEFAULT 0)")
-    return connection
+    try:
+        with connection:
+            yield connection
+    finally:
+        connection.close()
 
 def stop():
     if _process and _process.poll() is None:
