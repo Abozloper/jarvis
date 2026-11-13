@@ -81,8 +81,9 @@ class Operations:
         if not (brief or investigate or draft):
             return None
         try:
-            with (root / "Data" / "jobs.json").open(encoding="utf-8-sig") as file:
-                raw = file.read(1_000_001)
+            with (root / "Data" / "jobs.json").open("rb") as file:
+                snapshot = file.read(1_000_001)
+            raw = snapshot.decode("utf-8-sig")
             rows = json.loads(raw) if len(raw) <= 1_000_000 else None
             if not isinstance(rows, list):
                 raise ValueError
@@ -98,7 +99,7 @@ class Operations:
                     raise ValueError
                 job["due"] = date.fromisoformat(job["due"]) if job["due"] else None
                 jobs[job["id"].casefold()] = job
-        except (OSError, ValueError):
+        except (OSError, ValueError, UnicodeError):
             return "I couldn't read Data/jobs.json. Add or correct the local job records before trying again."
 
         active = [job for job in jobs.values()
@@ -147,5 +148,5 @@ class Operations:
         research = self.external(job, chat, get)
         if research:
             preview += research
-        self.pending = (job_id, preview, root, hashlib.sha256((root / "Data" / "jobs.json").read_bytes()).hexdigest())
+        self.pending = (job_id, preview, root, hashlib.sha256(snapshot).hexdigest())
         return preview + f"\n\nSay approve drafts for job {job_id} to save both locally, or cancel drafts."
