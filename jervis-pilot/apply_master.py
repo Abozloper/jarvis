@@ -85,7 +85,7 @@ replace("app.py", "    last_turn_typed = typed\n    if isinstance(text, ImageCap
     if isinstance(text, ImageCaption):""".lstrip("\n"))
 package = root / "package.json"
 metadata = json.loads(package.read_text(encoding="utf-8"))
-metadata["version"] = "1.0.16"
+metadata["version"] = "1.0.17"
 metadata["build"]["extraResources"].append({"from": "offline", "to": "offline", "filter": ["**/*"]})
 package.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
 # Keep the bundled CPU model on one small context across warm-up and conversation.
@@ -134,3 +134,6 @@ replace("local_llm.py", '    def __enter__(self) -> dict:\n        if (os.getenv
 # Keep citations visible while speaking a clean answer.
 replace("app.py", "    text = _latex_to_speech(text)", "    text = _latex_to_speech(text)\n    if os.getenv(\"JARVIS_MASTER_DIR\"):\n        text = re.sub(r\"https?://\\S+\", \"\", text)\n        text = re.sub(r\"\\[\\d+(?:,\\s*\\d+)*\\]\", \"\", text)")
 replace("osal.py", "if ($env:JARVIS_VOLUME) { $s.Volume = [int]$env:JARVIS_VOLUME }", "if ($env:JARVIS_VOLUME) { $s.Volume = [int]$env:JARVIS_VOLUME }\nif ($env:JARVIS_MASTER_DIR) { $s.Rate = -1 }")
+
+# Include PDF reader resources in the frozen backend.
+replace("jarvis-backend.spec", '# Offline speech recognition: native libraries plus the voice-activity model file', 'take_all("pypdf")\n# Offline speech recognition: native libraries plus the voice-activity model file')
