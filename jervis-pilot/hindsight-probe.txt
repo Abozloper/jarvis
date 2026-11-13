@@ -1,1 +1,1 @@
-Verify native Hindsight server startup and database.
+Verify Hindsight with actual local Ollama service.
